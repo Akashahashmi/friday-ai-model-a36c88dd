@@ -37,7 +37,7 @@ export function SettingsDialog({ open, onOpenChange, prefs, setPrefs, ttsSupport
           </div>
           <div className="space-y-2">
             <Label>Speech rate: {prefs.speechRate.toFixed(1)}×</Label>
-            <Slider min={0.6} max={1.6} step={0.1} value={[prefs.speechRate]} onValueChange={([v]) => set("speechRate", v)} disabled={!ttsSupported} />
+            <Slider min={0.6} max={1.6} step={0.1} value={[prefs.speechRate]} onValueChange={([v]) => set("speechRate", v ?? 1)} disabled={!ttsSupported} />
           </div>
         </div>
       </DialogContent>
