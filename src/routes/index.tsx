@@ -168,13 +168,10 @@ function Friday() {
         break;
       }
       case "youtube":
-      case "google": {
-        const url = a === "youtube" ? "https://www.youtube.com" : "https://www.google.com";
-        const w = window.open(url, "_blank", "noopener,noreferrer");
-        if (!w) toast.error("Your browser blocked the new tab. Please allow pop-ups.");
+      case "google":
+        // Navigation is handled by the anchor link itself; just log it.
         log(`Opened ${a === "youtube" ? "YouTube" : "Google"}`);
         break;
-      }
       case "calculator": {
         const expr = window.prompt("Enter a calculation (e.g. (12 + 8) * 3):");
         if (!expr) return;
@@ -207,6 +204,15 @@ function Friday() {
           <h1 className="font-display text-lg font-bold tracking-[0.3em] text-primary glow-text">FRIDAY<span className="text-foreground"> AI</span></h1>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={toggleMute}
+            aria-label={prefs.muted ? "Unmute voice" : "Mute voice"}
+            aria-pressed={prefs.muted}
+            title={prefs.muted ? "Unmute voice" : "Mute voice"}
+            className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {prefs.muted ? <VolumeX className="size-5 text-muted-foreground" /> : <Volume2 className="size-5 text-primary" />}
+          </button>
           <button onClick={() => setPanelOpen(true)} aria-label="Open activity panel" className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
             <Activity className="size-5" />
           </button>
@@ -234,6 +240,14 @@ function Friday() {
             <MessageList messages={messages} thinking={state === "processing"} />
           </section>
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
+          {activationNeeded && (
+            <button
+              onClick={activate}
+              className="glass glow-ring msg-in mx-auto w-fit rounded-full px-6 py-2.5 font-display text-xs tracking-[0.25em] text-primary transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              TAP TO ACTIVATE FRIDAY
+            </button>
+          )}
         </main>
 
         <aside className="glass hidden w-64 shrink-0 rounded-2xl p-4 lg:block">{panel}</aside>
