@@ -60,12 +60,24 @@ function Friday() {
         setState("idle");
         return;
       }
+      let started = false;
       speak(text, prefs.speechRate, {
-        onStart: () => setState("speaking"),
-        onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+        onStart: () => {
+          started = true;
+          setState("speaking");
+        },
+        // Fires on end AND on error; clear processing/speaking either way.
+        onEnd: () => setState((s) => (s === "speaking" || s === "processing" ? "idle" : s)),
       });
+      // Safety net for environments where no utterance events fire at all.
+      window.setTimeout(() => {
+        if (!started) {
+          stopSpeaking();
+          setState((s) => (s === "processing" ? "idle" : s));
+        }
+      }, 2500);
     },
-    [prefs.voiceReplies, prefs.muted, prefs.speechRate, ttsSupported, speak],
+    [prefs.voiceReplies, prefs.muted, prefs.speechRate, ttsSupported, speak, stopSpeaking],
   );
 
   const addAssistant = (text: string, demo = false) => {
@@ -95,6 +107,7 @@ function Friday() {
       onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
     });
     const t = window.setTimeout(() => {
+      // No onstart within 1.5s (autoplay blocked or no voices): offer manual activation.
       if (!started) {
         stopSpeaking();
         setState("idle");
@@ -108,7 +121,7 @@ function Friday() {
     setActivationNeeded(false);
     speak(GREETING, prefs.speechRate, {
       onStart: () => setState("speaking"),
-      onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+      onEnd: () => setState((s) => (s === "speaking" || s === "processing" ? "idle" : s)),
     });
     log("Voice activated");
   };
