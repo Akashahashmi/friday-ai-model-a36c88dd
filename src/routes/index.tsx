@@ -44,18 +44,83 @@ function Friday() {
   const [state, setState] = useState<AssistantState>("idle");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [activationNeeded, setActivationNeeded] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const speech = useSpeech();
+  const { speak, stopSpeaking, ttsSupported } = speech;
 
   const log = useCallback((label: string) => setActivity((a) => [{ id: uid(), label, at: Date.now() }, ...a].slice(0, 30)), [setActivity]);
   const blip = (f?: number) => prefs.uiSounds && playBlip(f);
 
+  // Voice-first: every assistant reply is spoken unless muted/unsupported.
+  // The "speaking" state follows the real utterance onstart/onend events.
+  const speakReply = useCallback(
+    (text: string) => {
+      if (!prefs.voiceReplies || prefs.muted || !ttsSupported) {
+        setState("idle");
+        return;
+      }
+      speak(text, prefs.speechRate, {
+        onStart: () => setState("speaking"),
+        onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+      });
+    },
+    [prefs.voiceReplies, prefs.muted, prefs.speechRate, ttsSupported, speak],
+  );
+
   const addAssistant = (text: string, demo = false) => {
     setMessages((m) => [...m, { id: uid(), role: "assistant", text, at: Date.now(), demo }]);
-    if (prefs.voiceReplies && speech.ttsSupported) {
-      setState("speaking");
-      speech.speak(text, prefs.speechRate, () => setState("idle"));
-    } else setState("idle");
+    speakReply(text);
+  };
+
+  // Greeting: shown once per page load in the conversation…
+  useEffect(() => {
+    if (greetingQueued) return;
+    greetingQueued = true;
+    setMessages((m) => [...m, { id: uid(), role: "assistant", text: GREETING, at: Date.now() }]);
+    setActivity((a) => [{ id: uid(), label: "Greeted user", at: Date.now() }, ...a].slice(0, 30));
+  }, [setMessages, setActivity]);
+
+  // …and spoken once browser TTS is available. If autoplay is blocked,
+  // offer a "Tap to activate" button instead of claiming it was spoken.
+  useEffect(() => {
+    if (greetingSpoken || !ttsSupported) return;
+    greetingSpoken = true;
+    let started = false;
+    speak(GREETING, 1, {
+      onStart: () => {
+        started = true;
+        setState("speaking");
+      },
+      onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+    });
+    const t = window.setTimeout(() => {
+      if (!started) {
+        stopSpeaking();
+        setState("idle");
+        setActivationNeeded(true);
+      }
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [ttsSupported, speak, stopSpeaking]);
+
+  const activate = () => {
+    setActivationNeeded(false);
+    speak(GREETING, prefs.speechRate, {
+      onStart: () => setState("speaking"),
+      onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+    });
+    log("Voice activated");
+  };
+
+  const toggleMute = () => {
+    const next = !prefs.muted;
+    if (next) {
+      stopSpeaking();
+      setState((s) => (s === "speaking" ? "idle" : s));
+      log("Voice muted");
+    } else log("Voice unmuted");
+    setPrefs({ ...prefs, muted: next });
   };
 
   const send = async (text: string) => {
