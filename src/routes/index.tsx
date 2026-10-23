@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
-import { Settings, Activity } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Settings, Activity, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Orb, STATE_LABEL } from "@/components/friday/Orb";
 import { QuickActions, type QuickAction } from "@/components/friday/QuickActions";
@@ -31,6 +31,11 @@ export const Route = createFileRoute("/")({
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = DemoProvider; // Swap for a server-backed provider later.
+
+const GREETING = "Hi bruh, how's your day going?";
+// Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
+let greetingQueued = false;
+let greetingSpoken = false;
 
 function Friday() {
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>("friday.messages", []);
