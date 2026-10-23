@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
-import { Settings, Activity } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Settings, Activity, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Orb, STATE_LABEL } from "@/components/friday/Orb";
 import { QuickActions, type QuickAction } from "@/components/friday/QuickActions";
@@ -32,6 +32,11 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = DemoProvider; // Swap for a server-backed provider later.
 
+const GREETING = "Hi bruh, how's your day going?";
+// Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
+let greetingQueued = false;
+let greetingSpoken = false;
+
 function Friday() {
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>("friday.messages", []);
   const [activity, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
@@ -39,18 +44,96 @@ function Friday() {
   const [state, setState] = useState<AssistantState>("idle");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [activationNeeded, setActivationNeeded] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const speech = useSpeech();
+  const { speak, stopSpeaking, ttsSupported } = speech;
 
   const log = useCallback((label: string) => setActivity((a) => [{ id: uid(), label, at: Date.now() }, ...a].slice(0, 30)), [setActivity]);
   const blip = (f?: number) => prefs.uiSounds && playBlip(f);
 
+  // Voice-first: every assistant reply is spoken unless muted/unsupported.
+  // The "speaking" state follows the real utterance onstart/onend events.
+  const speakReply = useCallback(
+    (text: string) => {
+      if (!prefs.voiceReplies || prefs.muted || !ttsSupported) {
+        setState("idle");
+        return;
+      }
+      let started = false;
+      speak(text, prefs.speechRate, {
+        onStart: () => {
+          started = true;
+          setState("speaking");
+        },
+        // Fires on end AND on error; clear processing/speaking either way.
+        onEnd: () => setState((s) => (s === "speaking" || s === "processing" ? "idle" : s)),
+      });
+      // Safety net for environments where no utterance events fire at all.
+      window.setTimeout(() => {
+        if (!started) {
+          stopSpeaking();
+          setState((s) => (s === "processing" ? "idle" : s));
+        }
+      }, 2500);
+    },
+    [prefs.voiceReplies, prefs.muted, prefs.speechRate, ttsSupported, speak, stopSpeaking],
+  );
+
   const addAssistant = (text: string, demo = false) => {
     setMessages((m) => [...m, { id: uid(), role: "assistant", text, at: Date.now(), demo }]);
-    if (prefs.voiceReplies && speech.ttsSupported) {
-      setState("speaking");
-      speech.speak(text, prefs.speechRate, () => setState("idle"));
-    } else setState("idle");
+    speakReply(text);
+  };
+
+  // Greeting: shown once per page load in the conversation…
+  useEffect(() => {
+    if (greetingQueued) return;
+    greetingQueued = true;
+    setMessages((m) => [...m, { id: uid(), role: "assistant", text: GREETING, at: Date.now() }]);
+    setActivity((a) => [{ id: uid(), label: "Greeted user", at: Date.now() }, ...a].slice(0, 30));
+  }, [setMessages, setActivity]);
+
+  // …and spoken once browser TTS is available. If autoplay is blocked,
+  // offer a "Tap to activate" button instead of claiming it was spoken.
+  useEffect(() => {
+    if (greetingSpoken || !ttsSupported) return;
+    greetingSpoken = true;
+    let started = false;
+    speak(GREETING, 1, {
+      onStart: () => {
+        started = true;
+        setState("speaking");
+      },
+      onEnd: () => setState((s) => (s === "speaking" ? "idle" : s)),
+    });
+    const t = window.setTimeout(() => {
+      // No onstart within 1.5s (autoplay blocked or no voices): offer manual activation.
+      if (!started) {
+        stopSpeaking();
+        setState("idle");
+        setActivationNeeded(true);
+      }
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [ttsSupported, speak, stopSpeaking]);
+
+  const activate = () => {
+    setActivationNeeded(false);
+    speak(GREETING, prefs.speechRate, {
+      onStart: () => setState("speaking"),
+      onEnd: () => setState((s) => (s === "speaking" || s === "processing" ? "idle" : s)),
+    });
+    log("Voice activated");
+  };
+
+  const toggleMute = () => {
+    const next = !prefs.muted;
+    if (next) {
+      stopSpeaking();
+      setState((s) => (s === "speaking" ? "idle" : s));
+      log("Voice muted");
+    } else log("Voice unmuted");
+    setPrefs({ ...prefs, muted: next });
   };
 
   const send = async (text: string) => {
@@ -98,13 +181,10 @@ function Friday() {
         break;
       }
       case "youtube":
-      case "google": {
-        const url = a === "youtube" ? "https://www.youtube.com" : "https://www.google.com";
-        const w = window.open(url, "_blank", "noopener,noreferrer");
-        if (!w) toast.error("Your browser blocked the new tab. Please allow pop-ups.");
+      case "google":
+        // Navigation is handled by the anchor link itself; just log it.
         log(`Opened ${a === "youtube" ? "YouTube" : "Google"}`);
         break;
-      }
       case "calculator": {
         const expr = window.prompt("Enter a calculation (e.g. (12 + 8) * 3):");
         if (!expr) return;
@@ -137,6 +217,15 @@ function Friday() {
           <h1 className="font-display text-lg font-bold tracking-[0.3em] text-primary glow-text">FRIDAY<span className="text-foreground"> AI</span></h1>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={toggleMute}
+            aria-label={prefs.muted ? "Unmute voice" : "Mute voice"}
+            aria-pressed={prefs.muted}
+            title={prefs.muted ? "Unmute voice" : "Mute voice"}
+            className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {prefs.muted ? <VolumeX className="size-5 text-muted-foreground" /> : <Volume2 className="size-5 text-primary" />}
+          </button>
           <button onClick={() => setPanelOpen(true)} aria-label="Open activity panel" className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
             <Activity className="size-5" />
           </button>
@@ -164,6 +253,14 @@ function Friday() {
             <MessageList messages={messages} thinking={state === "processing"} />
           </section>
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
+          {activationNeeded && (
+            <button
+              onClick={activate}
+              className="glass glow-ring msg-in mx-auto w-fit rounded-full px-6 py-2.5 font-display text-xs tracking-[0.25em] text-primary transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              TAP TO ACTIVATE FRIDAY
+            </button>
+          )}
         </main>
 
         <aside className="glass hidden w-64 shrink-0 rounded-2xl p-4 lg:block">{panel}</aside>

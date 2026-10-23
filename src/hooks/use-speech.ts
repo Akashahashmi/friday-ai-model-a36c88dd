@@ -36,13 +36,14 @@ export function useSpeech() {
 
   const stopListening = useCallback(() => recRef.current?.stop?.(), []);
 
-  const speak = useCallback((text: string, rate: number, onEnd: () => void) => {
-    if (!("speechSynthesis" in window)) return onEnd();
-    window.speechSynthesis.cancel();
+  const speak = useCallback((text: string, rate: number, handlers: { onStart?: () => void; onEnd: () => void }) => {
+    if (!("speechSynthesis" in window)) return handlers.onEnd();
+    window.speechSynthesis.cancel(); // prevent overlapping speech
     const u = new SpeechSynthesisUtterance(text);
     u.rate = rate;
-    u.onend = onEnd;
-    u.onerror = onEnd;
+    u.onstart = handlers.onStart ?? null;
+    u.onend = handlers.onEnd;
+    u.onerror = handlers.onEnd;
     window.speechSynthesis.speak(u);
   }, []);
 

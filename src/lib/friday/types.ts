@@ -19,13 +19,15 @@ export interface Preferences {
   voiceReplies: boolean;
   uiSounds: boolean;
   speechRate: number;
+  muted: boolean;
 }
 
 export const DEFAULT_PREFS: Preferences = {
   animations: true,
-  voiceReplies: false,
+  voiceReplies: true,
   uiSounds: true,
   speechRate: 1,
+  muted: false,
 };
 
 /** Pluggable response provider. Swap DemoProvider for a server-backed one later. */

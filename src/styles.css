@@ -112,7 +112,12 @@
 .orb[data-state="processing"] { --speed: 3.5; }
 .orb[data-state="processing"] .orb-core { filter: hue-rotate(25deg) brightness(1.1); }
 .orb[data-state="speaking"] { --speed: 2.2; }
-.orb[data-state="speaking"] .orb-core { animation: orb-speak 0.45s ease-in-out infinite alternate; }
+.orb[data-state="speaking"] .orb-core {
+  background: radial-gradient(circle at 35% 30%, oklch(0.99 0.01 220), oklch(0.92 0.06 210) 35%, var(--glow) 65%, var(--glow-2));
+  box-shadow: 0 0 80px oklch(0.9 0.1 205 / 0.8), 0 0 180px oklch(0.7 0.18 230 / 0.5), inset 0 0 50px oklch(1 0 0 / 0.5);
+  animation: orb-speak 0.45s ease-in-out infinite alternate;
+}
+.orb[data-state="speaking"] .orb-ring.r2 { border-top-color: oklch(0.95 0.05 210); border-top-width: 3px; }
 .orb[data-state="speaking"] .orb-pulse { animation: pulse-out 0.9s ease-out infinite; }
 .orb[data-reduced="true"] *, .orb[data-reduced="true"] { animation: none !important; }
 
