@@ -13,7 +13,7 @@ import { MessageList } from "@/components/friday/MessageList";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useSpeech, playBlip } from "@/hooks/use-speech";
-import { DemoProvider } from "@/lib/friday/demo-provider";
+import { FridayAIProvider } from "@/lib/friday/openai-provider";
 import { evaluateExpression } from "@/lib/friday/calc";
 import { DEFAULT_PREFS, type ActivityItem, type AssistantState, type ChatMessage, type Preferences } from "@/lib/friday/types";
 
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
 });
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-const provider = DemoProvider; // Swap for a server-backed provider later.
+const provider = FridayAIProvider;// Swap for a server-backed provider later.
 
 const GREETING = "Hello boss, what's up?";
 // Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
