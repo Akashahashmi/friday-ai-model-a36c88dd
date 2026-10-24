@@ -136,6 +136,81 @@ function Friday() {
     setPrefs({ ...prefs, muted: next });
   };
 
+  const clearConversation = () => {
+    if (!window.confirm("Clear the whole conversation? This can't be undone.")) return false;
+    abortRef.current?.abort();
+    speech.stopSpeaking();
+    setMessages([]);
+    setState("idle");
+    log("Conversation cleared");
+    toast.success("Conversation cleared");
+    return true;
+  };
+
+  const openExternal = (url: string, label: string) => {
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    // window.open returns null with noopener even on success in some browsers, so always offer the link too.
+    setPendingLink({ url, label });
+    log(`Opened ${label}`);
+    return w;
+  };
+
+  const runIntent = (intent: Intent): boolean => {
+    const reply = (t: string) => addAssistant(t);
+    switch (intent.kind) {
+      case "open": {
+        const label = intent.site === "google" ? "Google" : "YouTube";
+        openExternal(intent.url, label);
+        reply(`Opening ${label}, boss. If a new tab didn't appear, use the link below.`);
+        return true;
+      }
+      case "search":
+        openExternal(intent.url, `Google search: ${intent.query}`);
+        reply(`Searching Google for "${intent.query}". If no tab opened, use the link below.`);
+        return true;
+      case "calculator":
+        onAction("calculator");
+        return true;
+      case "time":
+        log("Checked current time");
+        reply(`It's ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, boss.`);
+        return true;
+      case "date":
+        reply(`Today is ${new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`);
+        return true;
+      case "clear":
+        if (!clearConversation()) reply("Okay, I kept our conversation.");
+        return true;
+      case "joke":
+        log("Told a joke");
+        reply(JOKES[Math.floor(Math.random() * JOKES.length)]);
+        return true;
+      case "stop":
+        speech.stopSpeaking();
+        setState("idle");
+        return true;
+      case "mute":
+        if (!prefs.muted) toggleMute();
+        setMessages((m) => [...m, { id: uid(), role: "assistant", text: "Voice muted. Say or type \"unmute\" to hear me again.", at: Date.now() }]);
+        setState("idle");
+        return true;
+      case "unmute":
+        if (prefs.muted) setPrefs({ ...prefs, muted: false });
+        log("Voice unmuted");
+        setMessages((m) => [...m, { id: uid(), role: "assistant", text: "I'm back online, boss.", at: Date.now() }]);
+        speak("I'm back online, boss.", prefs.speechRate, { onStart: () => setState("speaking"), onEnd: () => setState("idle") });
+        return true;
+      case "repeat": {
+        const last = [...messages].reverse().find((m) => m.role === "assistant");
+        reply(last ? last.text : "There's nothing to repeat yet.");
+        return true;
+      }
+      case "desktop":
+        reply("I'm running in your browser, so I can't open desktop apps or change system settings. I can open websites, search Google, do calculations and tell the time.");
+        return true;
+    }
+  };
+
   const send = async (text: string) => {
     speech.stopSpeaking();
     blip(660);
@@ -143,6 +218,8 @@ function Friday() {
     const history = [...messages, userMsg];
     setMessages(history);
     log("Message sent");
+    const intent = parseIntent(text);
+    if (intent && runIntent(intent)) return;
     setState("processing");
     abortRef.current?.abort();
     const ctrl = new AbortController();
