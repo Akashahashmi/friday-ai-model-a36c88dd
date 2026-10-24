@@ -301,7 +301,7 @@ function Friday() {
           >
             {prefs.muted ? <VolumeX className="size-5 text-muted-foreground" /> : <Volume2 className="size-5 text-primary" />}
           </button>
-          <button onClick={() => setPanelOpen(true)} aria-label="Open activity panel" className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
+          <button onClick={() => setPanelOpen(true)} aria-label="Open activity panel" className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 2xl:hidden">
             <Activity className="size-5" />
           </button>
           <button onClick={() => setSettingsOpen(true)} aria-label="Open settings" className="grid size-10 place-items-center rounded-lg transition-transform hover:rotate-45 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -316,9 +316,9 @@ function Friday() {
           <QuickActions onAction={onAction} />
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col gap-3">
+        <main className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto lg:flex-row lg:gap-4 lg:overflow-hidden">
           <div className="md:hidden"><QuickActions onAction={onAction} layout="row" /></div>
-          <section className="flex flex-col items-center gap-2 pt-1">
+          <section className="flex shrink-0 flex-col items-center gap-2 pt-1 lg:w-64 lg:justify-center xl:w-72">
             <Helmet state={state} animate={prefs.animations} muted={prefs.muted} />
             <p className="font-display text-xs tracking-[0.35em] text-primary" role="status" aria-live="polite">
               {STATE_LABEL[state].toUpperCase()}
@@ -333,7 +333,8 @@ function Friday() {
               </button>
             )}
           </section>
-          <section className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4" aria-label="Conversation">
+          <div className="flex min-h-[60vh] min-w-0 flex-1 flex-col gap-3 lg:min-h-0">
+          <section className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4 sm:p-6" aria-label="Conversation">
             <MessageList messages={messages} thinking={state === "processing"} />
           </section>
           {pendingLink && (
@@ -353,9 +354,10 @@ function Friday() {
               TAP TO ACTIVATE FRIDAY
             </button>
           )}
+          </div>
         </main>
 
-        <aside className="glass hidden w-64 shrink-0 rounded-2xl p-4 lg:block">{panel}</aside>
+        <aside className="glass hidden w-64 shrink-0 rounded-2xl p-4 2xl:block">{panel}</aside>
       </div>
 
       <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
