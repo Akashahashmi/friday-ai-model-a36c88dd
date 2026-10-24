@@ -4,7 +4,7 @@ import { Settings, Activity, Volume2, VolumeX, Square } from "lucide-react";
 import { toast } from "sonner";
 import { STATE_LABEL } from "@/components/friday/Orb";
 import { Helmet } from "@/components/friday/Helmet";
-import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
+import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions":
 import { QuickActions, type QuickAction } from "@/components/friday/QuickActions";
 import { ActivityPanel } from "@/components/friday/ActivityPanel";
 import { SettingsDialog } from "@/components/friday/SettingsDialog";
