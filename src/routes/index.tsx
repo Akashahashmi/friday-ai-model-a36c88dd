@@ -186,7 +186,7 @@ function Friday() {
         return true;
       case "joke":
         log("Told a joke");
-        reply(JOKES[Math.floor(Math.random() * JOKES.length)]);
+        reply(JOKES[Math.floor(Math.random() * JOKES.length)] ?? JOKES[0]!);
         return true;
       case "stop":
         speech.stopSpeaking();

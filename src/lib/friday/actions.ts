@@ -27,7 +27,8 @@ export const JOKES = [
 export function parseIntent(input: string): Intent | null {
   const q = input.toLowerCase().trim().replace(/[.!?]+$/, "");
   const search = q.match(/^(?:please\s+)?(?:search|google)(?:\s+google)?(?:\s+for)?\s+(.+)$/);
-  if (search && search[1] !== "google") return { kind: "search", query: search[1], url: googleSearchUrl(search[1]) };
+  const term = search?.[1];
+  if (term && term !== "google") return { kind: "search", query: term, url: googleSearchUrl(term) };
   if (/\b(open|launch|go to)\b.*\byoutube\b/.test(q)) return { kind: "open", site: "youtube", url: SITES.youtube };
   if (/\b(open|launch|go to)\b.*\bgoogle\b/.test(q)) return { kind: "open", site: "google", url: SITES.google };
   if (/\b(open|launch|start)\b.*\b(notepad|word|excel|settings|chrome|file explorer|spotify|windows)\b/.test(q)) return { kind: "desktop" };

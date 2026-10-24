@@ -13,5 +13,5 @@ export function pickVoice(): SpeechSynthesisVoice | null {
     const v = voices.find((x) => x.name.includes(name) && x.lang.startsWith("en"));
     if (v) return v;
   }
-  return voices.find((v) => v.lang.startsWith("en")) ?? voices[0];
+  return voices.find((v) => v.lang.startsWith("en")) ?? voices[0] ?? null;
 }
