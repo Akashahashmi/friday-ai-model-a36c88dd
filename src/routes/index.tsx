@@ -272,12 +272,7 @@ function Friday() {
         break;
       }
       case "clear":
-        abortRef.current?.abort();
-        speech.stopSpeaking();
-        setMessages([]);
-        setState("idle");
-        log("Conversation cleared");
-        toast.success("Conversation cleared");
+        clearConversation();
         break;
     }
   };
@@ -320,15 +315,32 @@ function Friday() {
 
         <main className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="md:hidden"><QuickActions onAction={onAction} layout="row" /></div>
-          <section className="flex flex-col items-center gap-3 pt-2">
-            <Orb state={state} animate={prefs.animations} />
+          <section className="flex flex-col items-center gap-2 pt-1">
+            <Helmet state={state} animate={prefs.animations} muted={prefs.muted} />
             <p className="font-display text-xs tracking-[0.35em] text-primary" role="status" aria-live="polite">
               {STATE_LABEL[state].toUpperCase()}
             </p>
+            {state === "speaking" && (
+              <button
+                onClick={() => { speech.stopSpeaking(); setState("idle"); }}
+                aria-label="Stop speaking"
+                className="glass flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-[11px] tracking-[0.2em] text-primary hover:glow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Square className="size-3 fill-current" /> STOP SPEAKING
+              </button>
+            )}
           </section>
           <section className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4" aria-label="Conversation">
             <MessageList messages={messages} thinking={state === "processing"} />
           </section>
+          {pendingLink && (
+            <div className="glass msg-in flex items-center justify-between gap-3 rounded-xl px-4 py-2 text-sm">
+              <a href={pendingLink.url} target="_blank" rel="noopener noreferrer" className="truncate text-primary underline underline-offset-4">
+                Open {pendingLink.label}
+              </a>
+              <button onClick={() => setPendingLink(null)} aria-label="Dismiss link" className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          )}
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
           {activationNeeded && (
             <button
