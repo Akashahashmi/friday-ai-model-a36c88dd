@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Settings, Activity, Volume2, VolumeX } from "lucide-react";
+import { Settings, Activity, Volume2, VolumeX, Square } from "lucide-react";
 import { toast } from "sonner";
-import { Orb, STATE_LABEL } from "@/components/friday/Orb";
+import { STATE_LABEL } from "@/components/friday/Orb";
+import { Helmet } from "@/components/friday/Helmet";
+import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
 import { QuickActions, type QuickAction } from "@/components/friday/QuickActions";
 import { ActivityPanel } from "@/components/friday/ActivityPanel";
 import { SettingsDialog } from "@/components/friday/SettingsDialog";
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = DemoProvider; // Swap for a server-backed provider later.
 
-const GREETING = "Hi bruh, how's your day going?";
+const GREETING = "Hello boss, what's up?";
 // Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
 let greetingQueued = false;
 let greetingSpoken = false;
@@ -45,6 +47,7 @@ function Friday() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [activationNeeded, setActivationNeeded] = useState(false);
+  const [pendingLink, setPendingLink] = useState<{ url: string; label: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const speech = useSpeech();
   const { speak, stopSpeaking, ttsSupported } = speech;
