@@ -73,12 +73,10 @@ function Friday() {
         onEnd: () => setState((s) => (s === "speaking" || s === "processing" ? "idle" : s)),
       });
       // Safety net for environments where no utterance events fire at all.
-      window.setTimeout(() => {
-        if (!started) {
-          stopSpeaking();
-          setState((s) => (s === "processing" ? "idle" : s));
-        }
-      }, 2500);
+     
+      // Allow Gnani time to generate and start the audio.
+      // Do not stop speech just because audio startup takes longer.
+
     },
     [prefs.voiceReplies, prefs.muted, prefs.speechRate, ttsSupported, speak, stopSpeaking],
   );
