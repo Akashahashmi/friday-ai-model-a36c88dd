@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { VOICE, pickVoice } from "@/lib/friday/voice";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Rec = any;
@@ -40,7 +41,10 @@ export function useSpeech() {
     if (!("speechSynthesis" in window)) return handlers.onEnd();
     window.speechSynthesis.cancel(); // prevent overlapping speech
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = rate;
+    u.rate = rate * VOICE.rateFactor;
+    u.pitch = VOICE.pitch;
+    const v = pickVoice();
+    if (v) u.voice = v;
     u.onstart = handlers.onStart ?? null;
     u.onend = handlers.onEnd;
     u.onerror = handlers.onEnd;

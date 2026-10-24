@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Settings, Activity, Volume2, VolumeX } from "lucide-react";
+import { Settings, Activity, Volume2, VolumeX, Square } from "lucide-react";
 import { toast } from "sonner";
-import { Orb, STATE_LABEL } from "@/components/friday/Orb";
+import { STATE_LABEL } from "@/components/friday/Orb";
+import { Helmet } from "@/components/friday/Helmet";
+import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
 import { QuickActions, type QuickAction } from "@/components/friday/QuickActions";
 import { ActivityPanel } from "@/components/friday/ActivityPanel";
 import { SettingsDialog } from "@/components/friday/SettingsDialog";
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = DemoProvider; // Swap for a server-backed provider later.
 
-const GREETING = "Hi bruh, how's your day going?";
+const GREETING = "Hello boss, what's up?";
 // Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
 let greetingQueued = false;
 let greetingSpoken = false;
@@ -45,6 +47,7 @@ function Friday() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [activationNeeded, setActivationNeeded] = useState(false);
+  const [pendingLink, setPendingLink] = useState<{ url: string; label: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const speech = useSpeech();
   const { speak, stopSpeaking, ttsSupported } = speech;
@@ -136,6 +139,81 @@ function Friday() {
     setPrefs({ ...prefs, muted: next });
   };
 
+  const clearConversation = () => {
+    if (!window.confirm("Clear the whole conversation? This can't be undone.")) return false;
+    abortRef.current?.abort();
+    speech.stopSpeaking();
+    setMessages([]);
+    setState("idle");
+    log("Conversation cleared");
+    toast.success("Conversation cleared");
+    return true;
+  };
+
+  const openExternal = (url: string, label: string) => {
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    // window.open returns null with noopener even on success in some browsers, so always offer the link too.
+    setPendingLink({ url, label });
+    log(`Opened ${label}`);
+    return w;
+  };
+
+  const runIntent = (intent: Intent): boolean => {
+    const reply = (t: string) => addAssistant(t);
+    switch (intent.kind) {
+      case "open": {
+        const label = intent.site === "google" ? "Google" : "YouTube";
+        openExternal(intent.url, label);
+        reply(`Opening ${label}, boss. If a new tab didn't appear, use the link below.`);
+        return true;
+      }
+      case "search":
+        openExternal(intent.url, `Google search: ${intent.query}`);
+        reply(`Searching Google for "${intent.query}". If no tab opened, use the link below.`);
+        return true;
+      case "calculator":
+        onAction("calculator");
+        return true;
+      case "time":
+        log("Checked current time");
+        reply(`It's ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, boss.`);
+        return true;
+      case "date":
+        reply(`Today is ${new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`);
+        return true;
+      case "clear":
+        if (!clearConversation()) reply("Okay, I kept our conversation.");
+        return true;
+      case "joke":
+        log("Told a joke");
+        reply(JOKES[Math.floor(Math.random() * JOKES.length)] ?? JOKES[0]!);
+        return true;
+      case "stop":
+        speech.stopSpeaking();
+        setState("idle");
+        return true;
+      case "mute":
+        if (!prefs.muted) toggleMute();
+        setMessages((m) => [...m, { id: uid(), role: "assistant", text: "Voice muted. Say or type \"unmute\" to hear me again.", at: Date.now() }]);
+        setState("idle");
+        return true;
+      case "unmute":
+        if (prefs.muted) setPrefs({ ...prefs, muted: false });
+        log("Voice unmuted");
+        setMessages((m) => [...m, { id: uid(), role: "assistant", text: "I'm back online, boss.", at: Date.now() }]);
+        speak("I'm back online, boss.", prefs.speechRate, { onStart: () => setState("speaking"), onEnd: () => setState("idle") });
+        return true;
+      case "repeat": {
+        const last = [...messages].reverse().find((m) => m.role === "assistant");
+        reply(last ? last.text : "There's nothing to repeat yet.");
+        return true;
+      }
+      case "desktop":
+        reply("I'm running in your browser, so I can't open desktop apps or change system settings. I can open websites, search Google, do calculations and tell the time.");
+        return true;
+    }
+  };
+
   const send = async (text: string) => {
     speech.stopSpeaking();
     blip(660);
@@ -143,6 +221,8 @@ function Friday() {
     const history = [...messages, userMsg];
     setMessages(history);
     log("Message sent");
+    const intent = parseIntent(text);
+    if (intent && runIntent(intent)) return;
     setState("processing");
     abortRef.current?.abort();
     const ctrl = new AbortController();
@@ -195,12 +275,7 @@ function Friday() {
         break;
       }
       case "clear":
-        abortRef.current?.abort();
-        speech.stopSpeaking();
-        setMessages([]);
-        setState("idle");
-        log("Conversation cleared");
-        toast.success("Conversation cleared");
+        clearConversation();
         break;
     }
   };
@@ -243,15 +318,32 @@ function Friday() {
 
         <main className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="md:hidden"><QuickActions onAction={onAction} layout="row" /></div>
-          <section className="flex flex-col items-center gap-3 pt-2">
-            <Orb state={state} animate={prefs.animations} />
+          <section className="flex flex-col items-center gap-2 pt-1">
+            <Helmet state={state} animate={prefs.animations} muted={prefs.muted} />
             <p className="font-display text-xs tracking-[0.35em] text-primary" role="status" aria-live="polite">
               {STATE_LABEL[state].toUpperCase()}
             </p>
+            {state === "speaking" && (
+              <button
+                onClick={() => { speech.stopSpeaking(); setState("idle"); }}
+                aria-label="Stop speaking"
+                className="glass flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-[11px] tracking-[0.2em] text-primary hover:glow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Square className="size-3 fill-current" /> STOP SPEAKING
+              </button>
+            )}
           </section>
           <section className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4" aria-label="Conversation">
             <MessageList messages={messages} thinking={state === "processing"} />
           </section>
+          {pendingLink && (
+            <div className="glass msg-in flex items-center justify-between gap-3 rounded-xl px-4 py-2 text-sm">
+              <a href={pendingLink.url} target="_blank" rel="noopener noreferrer" className="truncate text-primary underline underline-offset-4">
+                Open {pendingLink.label}
+              </a>
+              <button onClick={() => setPendingLink(null)} aria-label="Dismiss link" className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          )}
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
           {activationNeeded && (
             <button
