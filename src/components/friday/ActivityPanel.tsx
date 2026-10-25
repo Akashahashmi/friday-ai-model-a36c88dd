@@ -1,5 +1,5 @@
 import type { ActivityItem, AssistantState } from "@/lib/friday/types";
-import { STATE_LABEL } from "./Orb";
+import { STATE_LABEL } from "./OrbitalCore";
 
 function Row({ k, v, tone }: { k: string; v: string; tone?: "ok" | "warn" | "muted" }) {
   const c = tone === "ok" ? "text-ok" : tone === "warn" ? "text-warn" : "text-muted-foreground";
