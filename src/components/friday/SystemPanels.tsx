@@ -70,7 +70,7 @@ function fmtBytes(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-function Panel({ title, value, note, bar }: { title: string; value: string; note: string; bar?: number }) {
+function Panel({ title, value, note, bar }: { title: string; value: string; note: string; bar?: number | undefined }) {
   return (
     <div className="glass rounded-xl p-3">
       <h3 className="font-display text-[10px] tracking-[0.22em] text-primary">{title}</h3>
