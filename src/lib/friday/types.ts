@@ -1,4 +1,4 @@
-export type AssistantState = "idle" | "listening" | "processing" | "speaking";
+export type AssistantState = "idle" | "listening" | "processing" | "speaking" | "error";
 
 export interface ChatMessage {
   id: string;
