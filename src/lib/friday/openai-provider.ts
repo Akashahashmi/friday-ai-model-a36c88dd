@@ -34,7 +34,7 @@ export const FridayAIProvider: AssistantProvider = {
           Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ messages }),
-        signal,
+        signal: signal ?? null,
       },
     );
 
