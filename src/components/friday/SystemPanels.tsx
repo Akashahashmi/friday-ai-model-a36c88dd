@@ -26,7 +26,15 @@ function readMetrics(prev: Metrics | null): Metrics {
 
 /** Browser-accessible system metrics. Anything the browser can't report is shown as unavailable — never faked. */
 function useSystemMetrics(): Metrics {
-  const [metrics, setMetrics] = useState<Metrics>(() => readMetrics(null));
+  // Keep the first browser render identical to SSR; device values arrive after mount.
+  const [metrics, setMetrics] = useState<Metrics>({
+    cpuCores: null,
+    ramGB: null,
+    disk: null,
+    online: true,
+    downlink: null,
+    effectiveType: null,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -35,8 +43,9 @@ function useSystemMetrics(): Metrics {
     const updateDisk = async () => {
       try {
         const est = await navigator.storage?.estimate?.();
-        if (alive && est && typeof est.quota === "number" && est.quota > 0) {
-          setMetrics((prev) => ({ ...prev, disk: { used: est.usage ?? 0, quota: est.quota! } }));
+        const quota = est?.quota;
+        if (alive && typeof quota === "number" && quota > 0) {
+          setMetrics((prev) => ({ ...prev, disk: { used: est?.usage ?? 0, quota } }));
         }
       } catch {
         /* storage estimate unsupported */
