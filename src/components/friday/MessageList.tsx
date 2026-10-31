@@ -13,7 +13,7 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
       {messages.map((m) =>
         m.role === "user" ? (
           <div key={m.id} className="msg-in flex justify-end">
-            <p className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">{m.text}</p>
+            <p className="max-w-[80%] break-words rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">{m.text}</p>
           </div>
         ) : m.role === "system" ? (
           <p key={m.id} className="msg-in text-center font-mono text-xs text-muted-foreground">— {m.text} —</p>
