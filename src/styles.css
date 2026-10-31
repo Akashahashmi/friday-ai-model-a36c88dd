@@ -67,7 +67,8 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background: #000000; min-height: 100%; }
+  html { background: #000000; min-height: 100%; }
+  body { background: transparent; min-height: 100%; }
   body {
     color: var(--color-foreground);
     font-family: var(--font-sans);
