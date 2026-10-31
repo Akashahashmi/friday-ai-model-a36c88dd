@@ -252,10 +252,10 @@ function Friday() {
 
   return (
     <div className={`flex h-dvh flex-col ${prefs.animations ? "" : "no-motion"}`}>
-      <header className="glass flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-x-0 border-t-0 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
-          <span className="size-2.5 rounded-full bg-primary glow-ring" />
-          <h1 className="font-display text-lg font-bold tracking-[0.3em] text-primary glow-text">FRIDAY<span className="text-foreground"> AI</span></h1>
+      <header className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-x-0 border-t-0 px-4 py-3 sm:flex sm:flex-wrap sm:justify-between sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="size-2.5 shrink-0 rounded-full bg-primary glow-ring" />
+          <h1 className="truncate font-display text-base font-bold tracking-[0.18em] text-primary glow-text sm:text-lg sm:tracking-[0.3em]">FRIDAY<span className="text-foreground"> AI</span></h1>
         </div>
         <LiveClock />
         <div className="flex items-center gap-2">
