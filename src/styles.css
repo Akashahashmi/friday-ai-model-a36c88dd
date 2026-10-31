@@ -67,18 +67,40 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); }
+  html { background: #000000; min-height: 100%; }
+  body { background: transparent; min-height: 100%; }
   body {
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.35 0.12 240 / 0.35), transparent 70%),
-      radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.4 0.15 210 / 0.15), transparent 70%),
-      linear-gradient(oklch(0.8 0.12 210 / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.8 0.12 210 / 0.035) 1px, transparent 1px);
-    background-size: auto, auto, 44px 44px, 44px 44px;
-    background-attachment: fixed;
   }
+}
+
+/* ---------- Space live wallpaper ---------- */
+.space-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: #000000; }
+.star-layer { position: absolute; top: 0; left: 0; border-radius: 9999px; }
+.star-layer.s1 { width: 1px; height: 1px; opacity: 0.7; }
+.star-layer.s2 { width: 1.5px; height: 1.5px; animation: twinkle 6s ease-in-out infinite; }
+.star-layer.s3 { width: 2px; height: 2px; animation: twinkle 9s ease-in-out 2s infinite; }
+@keyframes twinkle { 50% { opacity: 0.45; } }
+.meteor {
+  position: absolute; width: 120px; height: 1px; opacity: 0;
+  background: linear-gradient(90deg, oklch(1 0 0 / 0.85), transparent);
+  transform: rotate(215deg); transform-origin: left center;
+  animation: meteor var(--dur) linear var(--delay) infinite;
+}
+.meteor.m0 { top: 8%; left: 75%; --dur: 11s; --delay: 1s; }
+.meteor.m1 { top: 2%; left: 45%; --dur: 17s; --delay: 6s; width: 80px; }
+.meteor.m2 { top: 20%; left: 95%; --dur: 23s; --delay: 12s; }
+.meteor.m3 { top: 5%; left: 25%; --dur: 29s; --delay: 18s; width: 60px; }
+@keyframes meteor {
+  0% { opacity: 0; translate: 0 0; }
+  1% { opacity: 1; }
+  6% { opacity: 0; translate: -38vw 28vw; }
+  100% { opacity: 0; translate: -38vw 28vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .space-bg * { animation: none !important; }
+  .meteor { display: none; }
 }
 
 @utility glass {
