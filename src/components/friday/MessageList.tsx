@@ -23,7 +23,7 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
               FRIDAY
               {m.demo && <span className="rounded border border-warn/40 px-1.5 py-px font-mono text-[9px] tracking-normal text-warn">DEMO RESPONSE</span>}
             </div>
-            <p className="text-sm leading-relaxed">{m.text}</p>
+            <p className="break-words text-sm leading-relaxed">{m.text}</p>
           </div>
         ),
       )}
