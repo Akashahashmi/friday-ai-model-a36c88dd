@@ -37,7 +37,7 @@ let greetingSpoken = false;
 
 function Friday() {
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>("friday.messages", []);
-  const [activity, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
+  const [, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
   const [prefs, setPrefs] = useLocalStorage<Preferences>("friday.prefs", DEFAULT_PREFS);
   const [state, setState] = useState<AssistantState>("idle");
   const [activationNeeded, setActivationNeeded] = useState(false);
