@@ -88,10 +88,16 @@
   transform: rotate(215deg); transform-origin: left center;
   animation: meteor var(--dur) linear var(--delay) infinite;
 }
-.meteor.m0 { top: 8%; left: 75%; --dur: 11s; --delay: 1s; }
-.meteor.m1 { top: 2%; left: 45%; --dur: 17s; --delay: 6s; width: 80px; }
-.meteor.m2 { top: 20%; left: 95%; --dur: 23s; --delay: 12s; }
-.meteor.m3 { top: 5%; left: 25%; --dur: 29s; --delay: 18s; width: 60px; }
+/* 15s cycle = 3 bursts of 3 meteors, one burst every 5s; varied paths/speeds/lengths */
+.meteor.m0 { top: 8%; left: 75%; --dur: 15s; --delay: 0s; }
+.meteor.m1 { top: 2%; left: 45%; --dur: 15s; --delay: 0.4s; width: 80px; transform: rotate(208deg); }
+.meteor.m2 { top: 20%; left: 95%; --dur: 15s; --delay: 0.9s; width: 150px; transform: rotate(222deg); }
+.meteor.m3 { top: 5%; left: 25%; --dur: 15s; --delay: 5s; width: 60px; }
+.meteor.m4 { top: 14%; left: 60%; --dur: 15s; --delay: 5.3s; width: 100px; transform: rotate(211deg); }
+.meteor.m5 { top: -4%; left: 85%; --dur: 15s; --delay: 5.8s; width: 70px; transform: rotate(219deg); }
+.meteor.m6 { top: 26%; left: 70%; --dur: 15s; --delay: 10s; width: 90px; }
+.meteor.m7 { top: 10%; left: 35%; --dur: 15s; --delay: 10.5s; width: 130px; transform: rotate(205deg); }
+.meteor.m8 { top: -2%; left: 55%; --dur: 15s; --delay: 10.9s; width: 55px; transform: rotate(224deg); }
 @keyframes meteor {
   0% { opacity: 0; translate: 0 0; }
   1% { opacity: 1; }

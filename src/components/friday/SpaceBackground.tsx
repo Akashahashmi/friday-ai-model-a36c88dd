@@ -15,7 +15,7 @@ export function SpaceBackground() {
       <div className="star-layer s1" style={{ boxShadow: LAYERS[0] }} />
       <div className="star-layer s2" style={{ boxShadow: LAYERS[1] }} />
       <div className="star-layer s3" style={{ boxShadow: LAYERS[2] }} />
-      {[0, 1, 2, 3].map((i) => (
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
         <span key={i} className={`meteor m${i}`} />
       ))}
     </div>
