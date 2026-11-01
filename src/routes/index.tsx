@@ -4,8 +4,6 @@ import { Volume2, VolumeX, Square, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { OrbitalCore, STATE_LABEL } from "@/components/friday/OrbitalCore";
 import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
-import { ActivityPanel } from "@/components/friday/ActivityPanel";
-import { SystemPanels } from "@/components/friday/SystemPanels";
 import { LiveClock } from "@/components/friday/LiveClock";
 import { Composer } from "@/components/friday/Composer";
 import { MessageList } from "@/components/friday/MessageList";
@@ -32,7 +30,7 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = FridayAIProvider; // Swap for a server-backed provider later.
 
-const GREETING = "Hello boss, what's up?";
+const GREETING = "Hello Akasha, what's up?";
 // Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
 let greetingQueued = false;
 let greetingSpoken = false;
