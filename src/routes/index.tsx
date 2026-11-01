@@ -275,7 +275,7 @@ function Friday() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(340px,400px)_minmax(0,1fr)_minmax(250px,290px)] xl:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(280px,30%)_minmax(0,1fr)] xl:overflow-hidden">
         {/* Central orbital hologram */}
         <section className="order-1 flex flex-col items-center justify-center gap-3 py-2 xl:order-2 xl:min-h-0" aria-label="FRIDAY core">
           <OrbitalCore state={state} animate={prefs.animations} />
@@ -303,7 +303,7 @@ function Friday() {
 
         {/* Chat panel */}
         <section className="order-2 flex min-h-[55vh] min-w-0 flex-col gap-3 xl:order-1 xl:min-h-0" aria-label="Conversation">
-          <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4 sm:p-5">
+          <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-3 sm:p-4">
             <MessageList messages={messages} thinking={state === "processing"} />
           </div>
           {pendingLink && (
