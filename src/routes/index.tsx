@@ -316,14 +316,6 @@ function Friday() {
           )}
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
         </section>
-
-        {/* System monitors + status/activity */}
-        <aside className="order-3 flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
-          <SystemPanels />
-          <div className="glass hidden min-h-0 flex-1 rounded-2xl p-4 xl:block">
-            <ActivityPanel state={state} messageCount={messages.length} provider={provider.name} recSupported={speech.recSupported} ttsSupported={speech.ttsSupported} activity={activity} />
-          </div>
-        </aside>
       </div>
     </div>
   );
