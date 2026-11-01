@@ -4,8 +4,6 @@ import { Volume2, VolumeX, Square, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { OrbitalCore, STATE_LABEL } from "@/components/friday/OrbitalCore";
 import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
-import { ActivityPanel } from "@/components/friday/ActivityPanel";
-import { SystemPanels } from "@/components/friday/SystemPanels";
 import { LiveClock } from "@/components/friday/LiveClock";
 import { Composer } from "@/components/friday/Composer";
 import { MessageList } from "@/components/friday/MessageList";
@@ -32,14 +30,14 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 10);
 const provider = FridayAIProvider; // Swap for a server-backed provider later.
 
-const GREETING = "Hello boss, what's up?";
+const GREETING = "Hello Akasha, what's up?";
 // Module-level guards: survive React re-renders/StrictMode remounts, reset on real reload.
 let greetingQueued = false;
 let greetingSpoken = false;
 
 function Friday() {
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>("friday.messages", []);
-  const [activity, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
+  const [, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
   const [prefs, setPrefs] = useLocalStorage<Preferences>("friday.prefs", DEFAULT_PREFS);
   const [state, setState] = useState<AssistantState>("idle");
   const [activationNeeded, setActivationNeeded] = useState(false);
@@ -277,7 +275,7 @@ function Friday() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(340px,400px)_minmax(0,1fr)_minmax(250px,290px)] xl:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(280px,30%)_minmax(0,1fr)] xl:overflow-hidden">
         {/* Central orbital hologram */}
         <section className="order-1 flex flex-col items-center justify-center gap-3 py-2 xl:order-2 xl:min-h-0" aria-label="FRIDAY core">
           <OrbitalCore state={state} animate={prefs.animations} />
@@ -305,7 +303,7 @@ function Friday() {
 
         {/* Chat panel */}
         <section className="order-2 flex min-h-[55vh] min-w-0 flex-col gap-3 xl:order-1 xl:min-h-0" aria-label="Conversation">
-          <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-4 sm:p-5">
+          <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-3 sm:p-4">
             <MessageList messages={messages} thinking={state === "processing"} />
           </div>
           {pendingLink && (
@@ -318,14 +316,6 @@ function Friday() {
           )}
           <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
         </section>
-
-        {/* System monitors + status/activity */}
-        <aside className="order-3 flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto">
-          <SystemPanels />
-          <div className="glass hidden min-h-0 flex-1 rounded-2xl p-4 xl:block">
-            <ActivityPanel state={state} messageCount={messages.length} provider={provider.name} recSupported={speech.recSupported} ttsSupported={speech.ttsSupported} activity={activity} />
-          </div>
-        </aside>
       </div>
     </div>
   );
