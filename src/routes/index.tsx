@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Volume2, VolumeX, Square, Trash2 } from "lucide-react";
+import { Volume2, VolumeX, Square, Trash2, Bell, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { OrbitalCore, STATE_LABEL } from "@/components/friday/OrbitalCore";
 import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
+import { formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from "@/lib/friday/reminders";
 import { LiveClock } from "@/components/friday/LiveClock";
 import { Composer } from "@/components/friday/Composer";
 import { MessageList } from "@/components/friday/MessageList";
@@ -38,6 +39,7 @@ let greetingSpoken = false;
 function Friday() {
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>("friday.messages", []);
   const [, setActivity] = useLocalStorage<ActivityItem[]>("friday.activity", []);
+  const [reminders, setReminders] = useLocalStorage<Reminder[]>("friday.reminders", []);
   const [prefs, setPrefs] = useLocalStorage<Preferences>("friday.prefs", DEFAULT_PREFS);
   const [state, setState] = useState<AssistantState>("idle");
   const [activationNeeded, setActivationNeeded] = useState(false);
@@ -208,6 +210,64 @@ function Friday() {
     }
   };
 
+  // Reminders: set/list/cancel via chat. Alerts fire only while FRIDAY is open in a tab.
+  const runReminder = (text: string): boolean => {
+    const req = parseReminder(text);
+    if (!req) return false;
+    const reply = (t: string) => addAssistant(t);
+    switch (req.kind) {
+      case "set": {
+        if (isDuplicate(reminders, req.task, req.dueAt)) {
+          reply(`You already have that reminder, boss — "${req.task}" ${formatWhen(req.dueAt)}.`);
+          return true;
+        }
+        const r: Reminder = { id: uid(), task: req.task, dueAt: req.dueAt, done: false, notified: false, createdAt: Date.now() };
+        setReminders((rs) => [...rs, r]);
+        log("Reminder set");
+        // Ask for notification permission; alerts still work in-chat without it.
+        if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission();
+        reply(`Reminder set: "${req.task}" — ${formatWhen(req.dueAt)}. Heads up: I can only alert you while FRIDAY is open in a browser tab.`);
+        return true;
+      }
+      case "unclear":
+        reply(req.task ? `Sure — when should I remind you to ${req.task}? Say a time, like "at 7 PM" or "tomorrow at 9 AM".` : "What should I remind you about, and when?");
+        return true;
+      case "list": {
+        const up = upcoming(reminders);
+        reply(up.length ? `Your upcoming reminders: ${up.map((r) => `"${r.task}" ${formatWhen(r.dueAt)}`).join("; ")}.` : "You have no upcoming reminders, boss.");
+        return true;
+      }
+      case "cancel": {
+        const matches = reminders.filter((r) => !r.done && (!req.task || r.task.toLowerCase().includes(req.task)));
+        if (matches.length === 0) { reply(req.task ? `I couldn't find a reminder about "${req.task}".` : "You have no reminders to cancel."); return true; }
+        if (matches.length > 1) { reply(`I found ${matches.length} matching reminders: ${matches.map((r) => `"${r.task}"`).join(", ")}. Which one should I cancel?`); return true; }
+        const target = matches[0]!;
+        setReminders((rs) => rs.filter((r) => r.id !== target.id));
+        log("Reminder cancelled");
+        reply(`Cancelled the reminder to ${target.task}.`);
+        return true;
+      }
+    }
+  };
+
+  // Due-reminder check: fires while the app is open, plus once on load for anything missed.
+  useEffect(() => {
+    const check = () => {
+      const now = Date.now();
+      const due = reminders.filter((r) => !r.done && !r.notified && r.dueAt <= now);
+      if (!due.length) return;
+      setReminders((rs) => rs.map((r) => (due.some((d) => d.id === r.id) ? { ...r, notified: true } : r)));
+      for (const r of due) {
+        addAssistant(`Reminder, boss: ${r.task}.`);
+        if ("Notification" in window && Notification.permission === "granted") new Notification("FRIDAY reminder", { body: r.task });
+      }
+    };
+    check();
+    const t = window.setInterval(check, 20_000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminders]);
+
   const send = async (text: string) => {
     speech.stopSpeaking();
     blip(660);
@@ -215,6 +275,7 @@ function Friday() {
     const history = [...messages, userMsg];
     setMessages(history);
     log("Message sent");
+    if (runReminder(text)) return;
     const intent = parseIntent(text);
     if (intent && runIntent(intent)) return;
     setState("processing");
