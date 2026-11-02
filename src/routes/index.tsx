@@ -4,7 +4,7 @@ import { Volume2, VolumeX, Square, Trash2, Bell, BellOff, Check, X } from "lucid
 import { toast } from "sonner";
 import { OrbitalCore, STATE_LABEL } from "@/components/friday/OrbitalCore";
 import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
-import { formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from "@/lib/friday/reminders";
+import { collectDue, formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from "@/lib/friday/reminders";
 import { LiveClock } from "@/components/friday/LiveClock";
 import { Composer } from "@/components/friday/Composer";
 import { MessageList } from "@/components/friday/MessageList";
@@ -234,12 +234,12 @@ function Friday() {
           reply(`You already have that reminder, boss — "${req.task}" ${formatWhen(req.dueAt)}.`);
           return true;
         }
-        const r: Reminder = { id: uid(), task: req.task, dueAt: req.dueAt, done: false, notified: false, createdAt: Date.now() };
+        const r: Reminder = { id: uid(), task: req.task, dueAt: req.dueAt, done: false, notified: false, createdAt: Date.now(), ...(req.repeat ? { repeat: req.repeat } : {}) };
         setReminders((rs) => [...rs, r]);
         log("Reminder set");
         // Ask for notification permission; alerts still work in-chat without it.
         if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission();
-        reply(`Reminder set: "${req.task}" — ${formatWhen(req.dueAt)}. Heads up: I can only alert you while FRIDAY is open in a browser tab.`);
+        reply(`Reminder set: "${req.task}" — ${req.repeat ? "every day, next " : ""}${formatWhen(req.dueAt)}. Heads up: I can only alert you while FRIDAY is open in a browser tab.`);
         return true;
       }
       case "unclear":
@@ -268,10 +268,10 @@ function Friday() {
     const check = () => {
       const now = Date.now();
       // firedRef guards against double-firing before the "notified" flag is saved.
-      const due = reminders.filter((r) => !r.done && !r.notified && r.dueAt <= now && !firedRef.current.has(r.id));
+      const due = collectDue(reminders, now).due.filter((r) => !firedRef.current.has(`${r.id}@${r.dueAt}`));
       if (!due.length) return;
-      due.forEach((r) => firedRef.current.add(r.id));
-      setReminders((rs) => rs.map((r) => (due.some((d) => d.id === r.id) ? { ...r, notified: true } : r)));
+      due.forEach((r) => firedRef.current.add(`${r.id}@${r.dueAt}`));
+      setReminders((rs) => collectDue(rs, now).next);
       for (const r of due) {
         addAssistant(`Reminder, boss: ${r.task}.`);
         toast(`⏰ Reminder: ${r.task}`, { description: `Scheduled ${formatWhen(r.dueAt)}`, duration: 15000 });
@@ -283,7 +283,7 @@ function Friday() {
       if (soundOn) playChime();
     };
     check();
-    const t = window.setInterval(check, 20_000);
+    const t = window.setInterval(check, 5_000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reminders]);
