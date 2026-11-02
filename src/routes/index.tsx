@@ -367,6 +367,22 @@ function Friday() {
           <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-3 sm:p-4">
             <MessageList messages={messages} thinking={state === "processing"} />
           </div>
+          {upcoming(reminders).length > 0 && (
+            <div className="glass rounded-xl px-3 py-2 text-sm" aria-label="Upcoming reminders">
+              <p className="mb-1 flex items-center gap-2 font-display text-[11px] tracking-[0.2em] text-primary"><Bell className="size-3.5" /> REMINDERS</p>
+              <ul className="max-h-28 space-y-1 overflow-y-auto">
+                {upcoming(reminders).map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">{r.task} <span className="text-muted-foreground">· {formatWhen(r.dueAt)}</span></span>
+                    <span className="flex shrink-0 gap-1">
+                      <button onClick={() => setReminders((rs) => rs.map((x) => (x.id === r.id ? { ...x, done: true } : x)))} aria-label={`Mark ${r.task} done`} className="text-muted-foreground hover:text-primary"><Check className="size-4" /></button>
+                      <button onClick={() => setReminders((rs) => rs.filter((x) => x.id !== r.id))} aria-label={`Delete ${r.task}`} className="text-muted-foreground hover:text-destructive"><X className="size-4" /></button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {pendingLink && (
             <div className="glass msg-in flex items-center justify-between gap-3 rounded-xl px-4 py-2 text-sm">
               <a href={pendingLink.url} target="_blank" rel="noopener noreferrer" className="truncate text-primary underline underline-offset-4">
