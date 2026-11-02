@@ -281,8 +281,6 @@ function Friday() {
       }
       // Sound only after the reminder was delivered, once per batch.
       if (soundOn) playChime();
-      {
-      }
     };
     check();
     const t = window.setInterval(check, 20_000);
