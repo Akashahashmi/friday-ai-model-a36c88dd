@@ -20,6 +20,7 @@ export interface Preferences {
   uiSounds: boolean;
   speechRate: number;
   muted: boolean;
+  reminderSound?: boolean;
 }
 
 export const DEFAULT_PREFS: Preferences = {
@@ -28,6 +29,7 @@ export const DEFAULT_PREFS: Preferences = {
   uiSounds: true,
   speechRate: 1,
   muted: false,
+  reminderSound: true,
 };
 
 /** Pluggable response provider. Swap DemoProvider for a server-backed one later. */

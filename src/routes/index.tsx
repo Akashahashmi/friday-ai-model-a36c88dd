@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Volume2, VolumeX, Square, Trash2, Bell, Check, X } from "lucide-react";
+import { Volume2, VolumeX, Square, Trash2, Bell, BellOff, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { OrbitalCore, STATE_LABEL } from "@/components/friday/OrbitalCore";
 import { parseIntent, JOKES, type Intent } from "@/lib/friday/actions";
@@ -8,6 +8,7 @@ import { formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from 
 import { LiveClock } from "@/components/friday/LiveClock";
 import { Composer } from "@/components/friday/Composer";
 import { MessageList } from "@/components/friday/MessageList";
+import { playChime, unlockAudio } from "@/lib/friday/chime";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useSpeech, playBlip } from "@/hooks/use-speech";
 import { FridayAIProvider } from "@/lib/friday/openai-provider";
@@ -46,7 +47,19 @@ function Friday() {
   const [pendingLink, setPendingLink] = useState<{ url: string; label: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const errorTimerRef = useRef<number | null>(null);
+  const firedRef = useRef<Set<string>>(new Set());
+  const soundOn = prefs.reminderSound !== false;
   const speech = useSpeech();
+  // Unlock audio on first interaction so reminder chimes are allowed later.
+  useEffect(() => {
+    const u = () => unlockAudio();
+    window.addEventListener("pointerdown", u); window.addEventListener("keydown", u);
+    return () => { window.removeEventListener("pointerdown", u); window.removeEventListener("keydown", u); };
+  }, []);
+  const testSound = () => {
+    unlockAudio();
+    window.setTimeout(() => { if (!playChime()) toast.error("Your browser blocked the sound. Click the page and try again."); }, 50);
+  };
   const { speak, stopSpeaking, ttsSupported } = speech;
 
   const log = useCallback((label: string) => setActivity((a) => [{ id: uid(), label, at: Date.now() }, ...a].slice(0, 30)), [setActivity]);
@@ -254,12 +267,21 @@ function Friday() {
   useEffect(() => {
     const check = () => {
       const now = Date.now();
-      const due = reminders.filter((r) => !r.done && !r.notified && r.dueAt <= now);
+      // firedRef guards against double-firing before the "notified" flag is saved.
+      const due = reminders.filter((r) => !r.done && !r.notified && r.dueAt <= now && !firedRef.current.has(r.id));
       if (!due.length) return;
+      due.forEach((r) => firedRef.current.add(r.id));
       setReminders((rs) => rs.map((r) => (due.some((d) => d.id === r.id) ? { ...r, notified: true } : r)));
       for (const r of due) {
         addAssistant(`Reminder, boss: ${r.task}.`);
-        if ("Notification" in window && Notification.permission === "granted") new Notification("FRIDAY reminder", { body: r.task });
+        toast(`⏰ Reminder: ${r.task}`, { description: `Scheduled ${formatWhen(r.dueAt)}`, duration: 15000 });
+        if ("Notification" in window && Notification.permission === "granted") {
+          try { new Notification("FRIDAY reminder", { body: r.task, tag: `friday-${r.id}` }); } catch { /* unsupported */ }
+        }
+      }
+      // Sound only after the reminder was delivered, once per batch.
+      if (soundOn) playChime();
+      {
       }
     };
     check();
@@ -369,7 +391,11 @@ function Friday() {
           </div>
           {upcoming(reminders).length > 0 && (
             <div className="glass rounded-xl px-3 py-2 text-sm" aria-label="Upcoming reminders">
-              <p className="mb-1 flex items-center gap-2 font-display text-[11px] tracking-[0.2em] text-primary"><Bell className="size-3.5" /> REMINDERS</p>
+              <p className="mb-1 flex items-center gap-2 font-display text-[11px] tracking-[0.2em] text-primary"><Bell className="size-3.5" /> REMINDERS
+                <span className="ml-auto flex gap-2">
+                  <button onClick={() => setPrefs({ ...prefs, reminderSound: !soundOn })} aria-label={soundOn ? "Turn reminder sound off" : "Turn reminder sound on"} title={soundOn ? "Reminder sound on" : "Reminder sound off"} className="text-muted-foreground hover:text-primary">{soundOn ? <Bell className="size-3.5" /> : <BellOff className="size-3.5" />}</button>
+                  <button onClick={testSound} className="hover:underline">TEST SOUND</button>
+                </span></p>
               <ul className="max-h-28 space-y-1 overflow-y-auto">
                 {upcoming(reminders).map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-2">
