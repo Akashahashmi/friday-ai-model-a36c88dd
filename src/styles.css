@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Orbitron", "Sora", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --radius-sm: calc(var(--radius) - 4px);
@@ -32,6 +32,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-surface: var(--surface);
   --color-glow: var(--glow);
   --color-glow-2: var(--glow-2);
   --color-warn: var(--warn);
@@ -42,22 +43,23 @@
   --radius: 0.875rem;
   --background: oklch(0.13 0.03 255);
   --foreground: oklch(0.95 0.02 220);
-  --card: oklch(0.18 0.04 255 / 0.55);
+  --card: oklch(0.17 0.012 255 / 0.7);
+  --surface: oklch(0.15 0.01 255);
   --card-foreground: oklch(0.95 0.02 220);
   --popover: oklch(0.17 0.04 255);
   --popover-foreground: oklch(0.95 0.02 220);
   --primary: oklch(0.85 0.15 205);
   --primary-foreground: oklch(0.15 0.04 255);
-  --secondary: oklch(0.24 0.05 255);
+  --secondary: oklch(0.22 0.015 255);
   --secondary-foreground: oklch(0.92 0.03 220);
-  --muted: oklch(0.22 0.04 255);
+  --muted: oklch(0.21 0.015 255);
   --muted-foreground: oklch(0.68 0.04 230);
   --accent: oklch(0.6 0.19 250);
   --accent-foreground: oklch(0.97 0.01 220);
   --destructive: oklch(0.65 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.8 0.12 210 / 0.16);
-  --input: oklch(0.8 0.12 210 / 0.2);
+  --border: oklch(0.85 0.03 230 / 0.1);
+  --input: oklch(0.85 0.03 230 / 0.14);
   --ring: oklch(0.85 0.15 205);
   --glow: oklch(0.85 0.15 205);
   --glow-2: oklch(0.6 0.2 255);
@@ -133,7 +135,7 @@
 .orbital-core {
   position: absolute; inset: 27%; border-radius: 9999px;
   background: radial-gradient(circle at 38% 32%, oklch(0.97 0.04 205), var(--glow) 32%, var(--glow-2) 68%, oklch(0.2 0.07 250));
-  box-shadow: 0 0 50px oklch(0.85 0.15 205 / 0.5), 0 0 130px oklch(0.6 0.2 250 / 0.35), inset 0 0 36px oklch(1 0 0 / 0.25);
+  box-shadow: 0 0 40px oklch(0.85 0.15 205 / 0.4), 0 0 100px oklch(0.6 0.2 250 / 0.25), inset 0 0 36px oklch(1 0 0 / 0.25);
   animation: orb-breathe calc(5s / var(--speed)) ease-in-out infinite;
   transition: box-shadow 0.5s ease, filter 0.5s ease;
 }

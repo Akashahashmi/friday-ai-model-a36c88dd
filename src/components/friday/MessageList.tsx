@@ -9,21 +9,21 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
     return <p className="py-6 text-center text-sm text-muted-foreground">Say hello, ask the time, or try “12 * 7”.</p>;
   }
   return (
-    <div role="log" aria-live="polite" className="space-y-3">
+    <div role="log" aria-live="polite" className="space-y-5">
       {messages.map((m) =>
         m.role === "user" ? (
           <div key={m.id} className="msg-in flex justify-end">
-            <p className="max-w-[80%] break-words rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">{m.text}</p>
+            <p className="max-w-[82%] break-words rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-[15px] leading-relaxed text-primary-foreground">{m.text}</p>
           </div>
         ) : m.role === "system" ? (
           <p key={m.id} className="msg-in text-center font-mono text-xs text-muted-foreground">— {m.text} —</p>
         ) : (
           <div key={m.id} className="msg-in max-w-[85%]">
-            <div className="mb-1 flex items-center gap-2 font-display text-[10px] tracking-[0.2em] text-primary">
+            <div className="mb-1 flex items-center gap-2 font-display text-[10px] tracking-[0.24em] text-primary/80">
               FRIDAY
               {m.demo && <span className="rounded border border-warn/40 px-1.5 py-px font-mono text-[9px] tracking-normal text-warn">DEMO RESPONSE</span>}
             </div>
-            <p className="break-words text-sm leading-relaxed">{m.text}</p>
+            <p className="break-words text-[15px] leading-relaxed text-foreground/95">{m.text}</p>
           </div>
         ),
       )}
