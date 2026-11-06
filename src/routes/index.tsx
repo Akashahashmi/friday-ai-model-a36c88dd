@@ -331,45 +331,47 @@ function Friday() {
 
   return (
     <div className={`flex h-dvh flex-col ${prefs.animations ? "" : "no-motion"}`}>
-      <header className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-x-0 border-t-0 px-4 py-3 sm:flex sm:flex-wrap sm:justify-between sm:px-6">
+      <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:grid-cols-[1fr_auto_1fr] sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="size-2.5 shrink-0 rounded-full bg-primary glow-ring" />
-          <h1 className="truncate font-display text-base font-bold tracking-[0.18em] text-primary glow-text sm:text-lg sm:tracking-[0.3em]">FRIDAY<span className="text-foreground"> AI</span></h1>
+          <span className="size-2 shrink-0 rounded-full bg-primary" />
+          <h1 className="truncate font-display text-sm font-bold tracking-[0.22em] text-primary sm:text-base sm:tracking-[0.3em]">FRIDAY<span className="text-foreground"> AI</span></h1>
         </div>
-        <LiveClock />
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:block"><LiveClock /></div>
+        <div className="flex items-center justify-end gap-1.5">
           <button
             onClick={toggleMute}
             aria-label={prefs.muted ? "Unmute voice" : "Mute voice"}
             aria-pressed={prefs.muted}
             title={prefs.muted ? "Unmute voice" : "Mute voice"}
-            className="grid size-10 place-items-center rounded-lg hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="grid size-9 place-items-center rounded-lg transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {prefs.muted ? <VolumeX className="size-5 text-muted-foreground" /> : <Volume2 className="size-5 text-primary" />}
+            {prefs.muted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-primary" />}
           </button>
           <button
             onClick={clearConversation}
-            className="glass flex items-center gap-2 rounded-lg px-3 py-2 font-display text-[11px] tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary hover:glow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Clear conversation"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Trash2 className="size-3.5" /> CLEAR CONVERSATION
+            <Trash2 className="size-4" /> <span className="hidden sm:inline">Clear conversation</span>
           </button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:grid xl:grid-cols-[minmax(280px,30%)_minmax(0,1fr)] xl:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-5 xl:grid xl:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] xl:gap-6 xl:overflow-hidden">
         {/* Central orbital hologram */}
         <section className="order-1 flex flex-col items-center justify-center gap-3 py-2 xl:order-2 xl:min-h-0" aria-label="FRIDAY core">
           <OrbitalCore state={state} animate={prefs.animations} />
-          <p className="font-display text-xs tracking-[0.35em] text-primary" role="status" aria-live="polite">
+          <div className="sm:hidden"><LiveClock /></div>
+          <p className="font-display text-[11px] tracking-[0.32em] text-primary/90" role="status" aria-live="polite">
             {STATE_LABEL[state].toUpperCase()}
           </p>
           {state === "speaking" && (
             <button
               onClick={() => { speech.stopSpeaking(); setState("idle"); }}
               aria-label="Stop speaking"
-              className="glass flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-[11px] tracking-[0.2em] text-primary hover:glow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-8 items-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-medium text-foreground transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Square className="size-3 fill-current" /> STOP SPEAKING
+              <Square className="size-3 fill-current text-primary" /> Stop speaking
             </button>
           )}
           {activationNeeded && (
@@ -383,12 +385,12 @@ function Friday() {
         </section>
 
         {/* Chat panel */}
-        <section className="order-2 flex min-h-[55vh] min-w-0 flex-col gap-3 xl:order-1 xl:min-h-0" aria-label="Conversation">
-          <div className="glass min-h-0 flex-1 overflow-y-auto rounded-2xl p-3 sm:p-4">
+        <section className="order-2 flex min-h-[60vh] min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface/85 backdrop-blur-md xl:order-1 xl:min-h-0" aria-label="Conversation">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
             <MessageList messages={messages} thinking={state === "processing"} />
           </div>
           {upcoming(reminders).length > 0 && (
-            <div className="glass rounded-xl px-3 py-2 text-sm" aria-label="Upcoming reminders">
+            <div className="border-t border-border px-4 py-2.5 text-sm sm:px-5" aria-label="Upcoming reminders">
               <p className="mb-1 flex items-center gap-2 font-display text-[11px] tracking-[0.2em] text-primary"><Bell className="size-3.5" /> REMINDERS
                 <span className="ml-auto flex gap-2">
                   <button onClick={() => setPrefs({ ...prefs, reminderSound: !soundOn })} aria-label={soundOn ? "Turn reminder sound off" : "Turn reminder sound on"} title={soundOn ? "Reminder sound on" : "Reminder sound off"} className="text-muted-foreground hover:text-primary">{soundOn ? <Bell className="size-3.5" /> : <BellOff className="size-3.5" />}</button>
@@ -408,14 +410,16 @@ function Friday() {
             </div>
           )}
           {pendingLink && (
-            <div className="glass msg-in flex items-center justify-between gap-3 rounded-xl px-4 py-2 text-sm">
+            <div className="msg-in flex items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-sm sm:px-5">
               <a href={pendingLink.url} target="_blank" rel="noopener noreferrer" className="truncate text-primary underline underline-offset-4">
                 Open {pendingLink.label}
               </a>
               <button onClick={() => setPendingLink(null)} aria-label="Dismiss link" className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
           )}
-          <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
+          <div className="border-t border-border p-3">
+            <Composer state={state} recSupported={speech.recSupported} onSend={send} onMic={toggleMic} />
+          </div>
         </section>
       </div>
     </div>

@@ -16,7 +16,7 @@ export const STATE_LABEL: Record<AssistantState, string> = {
 export function OrbitalCore({ state, animate }: { state: AssistantState; animate: boolean }) {
   return (
     <div
-      className="orbital mx-auto w-52 sm:w-64 xl:w-72 2xl:w-80"
+      className="orbital mx-auto w-44 sm:w-60 xl:w-80 2xl:w-96"
       data-state={state}
       data-reduced={!animate}
       aria-hidden="true"

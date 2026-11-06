@@ -19,16 +19,16 @@ export function Composer({ state, recSupported, onSend, onMic }: {
   };
   const listening = state === "listening";
   return (
-    <form onSubmit={submit} className="glass flex items-center gap-2 rounded-2xl p-2 focus-within:glow-ring">
+    <form onSubmit={submit} className="flex items-center gap-2 rounded-xl border border-input bg-background/60 p-1.5 transition-colors focus-within:border-primary/50">
       <button
         type="button"
         onClick={onMic}
         disabled={!recSupported || busy}
         aria-label={listening ? "Stop listening" : "Start voice input"}
         title={recSupported ? "Voice input" : "Voice input isn't supported in this browser"}
-        className={`grid size-10 shrink-0 place-items-center rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 ${listening ? "bg-primary text-primary-foreground glow-ring" : "bg-secondary text-primary hover:bg-muted"}`}
+        className={`grid size-9 shrink-0 place-items-center rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 ${listening ? "bg-primary text-primary-foreground" : "bg-secondary text-primary hover:bg-muted"}`}
       >
-        {recSupported ? <Mic className="size-5" /> : <MicOff className="size-5" />}
+        {recSupported ? <Mic className="size-4" /> : <MicOff className="size-4" />}
       </button>
       <label htmlFor="msg" className="sr-only">Message FRIDAY</label>
       <input
@@ -43,9 +43,9 @@ export function Composer({ state, recSupported, onSend, onMic }: {
         type="submit"
         disabled={!text.trim() || busy}
         aria-label="Send message"
-        className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground transition-all hover:glow-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
+        className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
       >
-        <SendHorizontal className="size-5" />
+        <SendHorizontal className="size-4" />
       </button>
     </form>
   );
