@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from "./reminders";
+import { collectDue, formatWhen, isDuplicate, parseReminder, upcoming, type Reminder } from "./reminders";
 
 // Fixed "now": Wednesday 2026-11-04, 15:00 local time.
 const NOW = new Date(2026, 10, 4, 15, 0, 0);
@@ -84,5 +84,46 @@ describe("formatWhen / upcoming", () => {
       { id: "4", task: "old", dueAt: NOW.getTime() - 3600_000, done: false, notified: true, createdAt: 0 },
     ];
     expect(upcoming(rs, NOW.getTime()).map((r) => r.task)).toEqual(["a", "b"]);
+  });
+});
+
+describe("relative and repeating reminders", () => {
+  const min = 60_000;
+  it("'in 2 minutes' is now + 2 min", () => {
+    const r = parseReminder("remind me to stretch in 2 minutes", NOW);
+    expect(r).toMatchObject({ kind: "set", task: "stretch", dueAt: NOW.getTime() + 2 * min });
+  });
+  it("'after 5 minutes' is now + 5 min", () => {
+    const r = parseReminder("remind me after 5 minutes to drink water", NOW);
+    expect(r).toMatchObject({ kind: "set", dueAt: NOW.getTime() + 5 * min });
+  });
+  it("'set a reminder for 10 minutes from now' with no task", () => {
+    expect(parseReminder("set a reminder for 10 minutes from now", NOW)).toEqual({ kind: "set", task: "reminder", dueAt: NOW.getTime() + 10 * min });
+  });
+  it("'in 1 hour' is now + 60 min", () => {
+    const r = parseReminder("remind me in 1 hour to study", NOW);
+    expect(r).toMatchObject({ kind: "set", dueAt: NOW.getTime() + 60 * min });
+  });
+  it("'every day at 7 AM' is daily", () => {
+    const r = parseReminder("remind me every day at 7 AM to exercise", NOW);
+    expect(r).toMatchObject({ kind: "set", task: "exercise", repeat: "daily" });
+  });
+});
+
+describe("collectDue", () => {
+  const t = NOW.getTime();
+  const r = (o: Partial<Reminder>): Reminder => ({ id: "x", task: "t", dueAt: t - 1000, done: false, notified: false, createdAt: 0, ...o });
+  it("fires a due one-off once", () => {
+    const { due, next } = collectDue([r({})], t);
+    expect(due).toHaveLength(1);
+    expect(collectDue(next, t).due).toHaveLength(0);
+  });
+  it("does not fire future reminders", () => {
+    expect(collectDue([r({ dueAt: t + 1000 })], t).due).toHaveLength(0);
+  });
+  it("rolls a daily reminder to the next day", () => {
+    const { next } = collectDue([r({ repeat: "daily" })], t);
+    expect(next[0]!.dueAt).toBe(t - 1000 + 86_400_000);
+    expect(next[0]!.notified).toBe(false);
   });
 });
