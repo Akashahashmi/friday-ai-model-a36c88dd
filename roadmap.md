@@ -5,6 +5,7 @@
 
 # Live knowledge update
 
-- [ ] Confirm existing chat capabilities and connect a real web-search service.
-- [ ] Add selective live search and clickable sources without replacing the current model or voice.
-- [ ] Test recent AI developments, current software versions, and ordinary conversation with genuine results.
+- [x] Inspect the current chat contract: external reply and Gnani-named speech services remain unchanged; their server source is unavailable.
+- [ ] Connect a real web-search service. Blocked: Firecrawl connection was declined.
+- [ ] Add selective live search and clickable sources without replacing the current model or voice. Blocked: search connection required.
+- [ ] Test recent AI developments, current software versions, and ordinary conversation with genuine results. Blocked: live search is not connected or implemented.
