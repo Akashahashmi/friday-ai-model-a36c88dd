@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/lib/friday/types";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { formatAssistantText } from "@/lib/friday/output";
 
 export function MessageList({ messages, thinking }: { messages: ChatMessage[]; thinking: boolean }) {
   const end = useRef<HTMLDivElement>(null);
@@ -23,7 +26,11 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
               FRIDAY
               {m.demo && <span className="rounded border border-warn/40 px-1.5 py-px font-mono text-[9px] tracking-normal text-warn">DEMO RESPONSE</span>}
             </div>
-            <p className="break-words text-[15px] leading-relaxed text-foreground/95">{m.text}</p>
+            <div className="assistant-markdown min-w-0 text-[15px] leading-relaxed text-foreground/95">
+              <Markdown remarkPlugins={[remarkGfm]} skipHtml components={{
+                a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">{children}</a>,
+              }}>{formatAssistantText(m.text)}</Markdown>
+            </div>
           </div>
         ),
       )}

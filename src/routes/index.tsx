@@ -289,6 +289,7 @@ function Friday() {
   }, [reminders]);
 
   const send = async (text: string) => {
+    abortRef.current?.abort();
     speech.stopSpeaking();
     blip(660);
     const userMsg: ChatMessage = { id: uid(), role: "user", text, at: Date.now() };
@@ -304,6 +305,7 @@ function Friday() {
     abortRef.current = ctrl;
     try {
       const reply = await provider.reply(history, ctrl.signal);
+      if (ctrl.signal.aborted || abortRef.current !== ctrl) return;
       addAssistant(reply, provider.isDemo);
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
@@ -317,6 +319,7 @@ function Friday() {
 
   const toggleMic = () => {
     if (state === "listening") return speech.stopListening();
+    abortRef.current?.abort();
     speech.stopSpeaking();
     blip(990);
     setState("listening");

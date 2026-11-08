@@ -1,6 +1,7 @@
 
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toSpeechText } from "@/lib/friday/output";
 
 /* Replace these placeholders with your Supabase values. */
 const SUPABASE_URL = "https://mngenfsgilaqnjhvcpcx.supabase.co";
@@ -21,9 +22,20 @@ export function useSpeech() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const requestRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const endRef = useRef<(() => void) | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const stopSpeaking = useCallback(() => {
     requestRef.current++;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    if (utteranceRef.current) {
+      utteranceRef.current.onstart = null;
+      utteranceRef.current.onend = null;
+      utteranceRef.current.onerror = null;
+      utteranceRef.current = null;
+    }
     const audio = audioRef.current;
     if (audio) {
       audio.onended = null;
@@ -37,6 +49,9 @@ export function useSpeech() {
       urlRef.current = null;
     }
     window.speechSynthesis?.cancel();
+    const end = endRef.current;
+    endRef.current = null;
+    end?.();
   }, []);
 
   useEffect(() => {
@@ -88,11 +103,72 @@ export function useSpeech() {
   const stopListening = useCallback(() => recRef.current?.stop?.(), []);
 
   const speak = useCallback(
-    async (text: string, _rate: number, handlers: SpeakHandlers) => {
+    async (original: string, _rate: number, handlers: SpeakHandlers) => {
       stopSpeaking();
       const requestId = requestRef.current;
+      const text = toSpeechText(original);
+      if (!text) { handlers.onEnd(); return; }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      let completed = false;
+      let started = false;
+      let startTimer: ReturnType<typeof setTimeout> | undefined;
+      let endTimer: ReturnType<typeof setTimeout> | undefined;
+      const finish = () => {
+        if (completed || requestId !== requestRef.current) return;
+        completed = true;
+        clearTimeout(startTimer);
+        clearTimeout(endTimer);
+        abortRef.current?.abort();
+        abortRef.current = null;
+        const audio = audioRef.current;
+        if (audio) {
+          audio.onplaying = null; audio.onended = null; audio.onerror = null;
+          audio.pause(); audio.src = ""; audioRef.current = null;
+        }
+        if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
+        if (utteranceRef.current) {
+          utteranceRef.current.onstart = null; utteranceRef.current.onend = null; utteranceRef.current.onerror = null;
+          utteranceRef.current = null;
+          window.speechSynthesis?.cancel();
+        }
+        endRef.current = null;
+        handlers.onEnd();
+      };
+      endRef.current = () => {
+        completed = true;
+        clearTimeout(startTimer); clearTimeout(endTimer);
+        handlers.onEnd();
+      };
+      const onStart = () => {
+        if (completed || started || requestId !== requestRef.current) return;
+        started = true;
+        clearTimeout(startTimer);
+        handlers.onStart?.();
+        // Recovery only: normal completion follows actual playback events.
+        endTimer = setTimeout(finish, Math.max(60_000, text.length * 150));
+      };
+      const fallback = () => {
+        if (completed || requestId !== requestRef.current) return;
+        const audio = audioRef.current;
+        if (audio) {
+          audio.onplaying = null; audio.onended = null; audio.onerror = null;
+          audio.pause(); audio.src = ""; audioRef.current = null;
+        }
+        if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
+        if (started || !("speechSynthesis" in window)) { finish(); return; }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utteranceRef.current = utterance;
+        utterance.rate = _rate;
+        utterance.onstart = onStart;
+        utterance.onend = finish;
+        utterance.onerror = finish;
+        startTimer = setTimeout(finish, 10_000);
+        try { window.speechSynthesis.speak(utterance); } catch { finish(); }
+      };
 
       try {
+        startTimer = setTimeout(() => controller.abort(), 20_000);
         const response = await fetch(
           `${SUPABASE_URL}/functions/v1/gnani-tts`,
           {
@@ -103,6 +179,7 @@ export function useSpeech() {
               Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
             },
             body: JSON.stringify({ text }),
+            signal: controller.signal,
           },
         );
 
@@ -111,7 +188,9 @@ export function useSpeech() {
         }
 
         const blob = await response.blob();
-        if (requestId !== requestRef.current) return;
+        if (completed || requestId !== requestRef.current) return;
+        clearTimeout(startTimer);
+        if (!blob.size) throw new Error("Speech service returned empty audio");
 
         const url = URL.createObjectURL(blob);
         urlRef.current = url;
@@ -119,43 +198,16 @@ export function useSpeech() {
         const audio = new Audio(url);
         audioRef.current = audio;
 
-        audio.onended = () => {
-          if (audioRef.current !== audio) return;
-          audioRef.current = null;
-          if (urlRef.current === url) {
-            URL.revokeObjectURL(url);
-            urlRef.current = null;
-          }
-          handlers.onEnd();
-        };
-
-        audio.onerror = () => {
-          if (audioRef.current !== audio) return;
-          audioRef.current = null;
-          if (urlRef.current === url) {
-            URL.revokeObjectURL(url);
-            urlRef.current = null;
-          }
-          handlers.onEnd();
-        };
-
+        audio.onplaying = onStart;
+        audio.onended = finish;
+        audio.onerror = fallback;
+        startTimer = setTimeout(finish, 10_000);
         await audio.play();
-        if (audioRef.current === audio) handlers.onStart?.();
       } catch (error) {
-        if (requestId !== requestRef.current) return;
+        if (completed || requestId !== requestRef.current) return;
+        clearTimeout(startTimer);
         console.error("Gnani TTS failed:", error);
-
-        // Browser voice fallback if Gnani is temporarily unavailable.
-        if ("speechSynthesis" in window) {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = _rate;
-          utterance.onstart = handlers.onStart ?? null;
-          utterance.onend = handlers.onEnd;
-          utterance.onerror = handlers.onEnd;
-          window.speechSynthesis.speak(utterance);
-        } else {
-          handlers.onEnd();
-        }
+        fallback();
       }
     },
     [stopSpeaking],

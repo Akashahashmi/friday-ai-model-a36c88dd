@@ -1,5 +1,9 @@
 # FRIDAY completion
 
+- [ ] Separate assistant chat formatting and speech text; preserve original messages.
+- [ ] Guard speech cancellation, fallback, and stale replies.
+- [ ] Test formatting, playback lifecycle, and desktop/mobile display; report audible limitations.
+
 - [x] Fix the remaining system-monitor hydration mismatch.
 - [x] Run the existing tests and verify chat, website links, clock, and layout in the browser.
 
