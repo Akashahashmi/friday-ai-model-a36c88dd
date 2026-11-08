@@ -11,3 +11,5 @@
 
 - Read browser-only system metrics after mount with a deterministic initial state so server rendering and hydration agree.
 - Prepend FRIDAY's response policy as a system message after selecting the latest conversation turns in the existing chat provider; this keeps instructions present without changing the external chat or speech services.
+- Keep original assistant messages in history; derive Markdown display and speech text separately using the shared output module to preserve technical content.
+- Gate every speech completion and fallback by the current request ID and cancel pending requests on interruption to prevent stale playback.
