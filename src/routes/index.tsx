@@ -56,9 +56,11 @@ function Friday() {
     window.addEventListener("pointerdown", u); window.addEventListener("keydown", u);
     return () => { window.removeEventListener("pointerdown", u); window.removeEventListener("keydown", u); };
   }, []);
-  const testSound = () => {
+  const testSound = async () => {
     unlockAudio();
-    window.setTimeout(() => { if (!playChime()) toast.error("Your browser blocked the sound. Click the page and try again."); }, 50);
+    const played = await playChime();
+    if (!played) toast.error("Your browser blocked the sound. Click the page and try again.");
+    else toast.success("Reminder sound is working.");
   };
   const { speak, stopSpeaking, ttsSupported } = speech;
 
@@ -280,13 +282,13 @@ function Friday() {
         }
       }
       // Sound only after the reminder was delivered, once per batch.
-      if (soundOn) playChime();
+      if (soundOn) void playChime();
     };
     check();
     const t = window.setInterval(check, 5_000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reminders]);
+  }, [reminders, soundOn]);
 
   const send = async (text: string) => {
     abortRef.current?.abort();
