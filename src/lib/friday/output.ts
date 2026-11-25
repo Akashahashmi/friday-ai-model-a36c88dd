@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 
 // Only known performance cues are removed. Brackets in code, links, and math stay intact.
 const cues = /\[(?:thoughtful|excited|dramatic pause|pause|short pause|long pause|laughs?|laughing|sighs?|whispers?|whispering|cheerful|serious|sad|happy|calm|speaking softly)\](?!\()/gi;
-const protectedCode = /(`{3,}[^\n]*\n[\s\S]*?(?:`{3,}|$)|~{3,}[^\n]*\n[\s\S]*?(?:~{3,}|$)|`+[^`\n]*`+)/g;
+const protectedCode = /(`{3,}[^\n]*\n[\s\S]*?(?:`{3,}|$)|~{3,}[^\n]*\n[\s\S]*?(?:~{3,}|$)|`+[^\`\n]*`+)/g;
 
 export function formatAssistantText(original: string): string {
   return original.split(protectedCode).map((part, i) => i % 2 ? part : part
@@ -17,6 +17,16 @@ export function formatAssistantText(original: string): string {
 
 type TextNode = { type: string; value?: string; url?: string; children?: TextNode[]; ordered?: boolean };
 const parser = unified().use(remarkParse).use(remarkGfm);
+
+function audioTagForCue(cue: string): string {
+  const normalized = cue.toLowerCase().replace(/[\[\]]/g, "").trim();
+  if (normalized === "cheerful" || normalized === "excited" || normalized === "happy") return "<excited>";
+  if (normalized === "laugh" || normalized === "laughs" || normalized === "laughing") return "<laugh>";
+  if (normalized === "sigh" || normalized === "sighs") return "<sigh>";
+  if (normalized === "whisper" || normalized === "whispers" || normalized === "whispering" || normalized === "speaking softly") return "<whispers>";
+  if (normalized === "pause" || normalized === "short pause" || normalized === "long pause" || normalized === "dramatic pause") return "<pauses>";
+  return "";
+}
 
 function spokenSymbols(text: string): string {
   return text
@@ -54,6 +64,17 @@ function readNode(node: TextNode): string {
 }
 
 export function toSpeechText(original: string): string {
-  const tree = parser.parse(formatAssistantText(original)) as TextNode;
-  return readNode(tree).replace(/\s+/g, " ").trim();
+  // Convert one explicit performance cue into Gnani Timbre v3.0's supported audio-tag syntax.
+  // Ignore cues inside code blocks and inline code.
+  let audioTag = "";
+  const withoutCues = original.split(protectedCode).map((part, i) => {
+    if (i % 2) return part;
+    return part.replace(cues, (cue) => {
+      if (!audioTag) audioTag = audioTagForCue(cue);
+      return "";
+    });
+  }).join("");
+  const tree = parser.parse(formatAssistantText(withoutCues)) as TextNode;
+  const spoken = readNode(tree).replace(/\s+/g, " ").trim();
+  return spoken && audioTag ? `${audioTag} ${spoken}` : spoken;
 }
