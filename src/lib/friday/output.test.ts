@@ -23,8 +23,20 @@ describe("separate assistant outputs", () => {
   });
   it("hides known performance cues but keeps Markdown links", () => {
     expect(formatAssistantText("[excited] Hello everyone!")).toBe("Hello everyone!");
-    expect(toSpeechText("[excited] Hello everyone!")).toBe("Hello everyone!");
+    expect(toSpeechText("[excited] Hello everyone!")).toBe("<excited> Hello everyone!");
     expect(formatAssistantText("[thoughtful](https://example.com)")).toBe("[thoughtful](https://example.com)");
+  });
+  it("converts trailing cheerful cues to Gnani's excited audio tag", () => {
+    expect(toSpeechText("Hello Akasha! [cheerful]")).toBe("<excited> Hello Akasha!");
+  });
+  it("converts supported whisper, laugh, sigh, and pause cues", () => {
+    expect(toSpeechText("[whispering] Keep this quiet.")).toBe("<whispers> Keep this quiet.");
+    expect(toSpeechText("That was funny. [laughs]")).toBe("<laugh> That was funny.");
+    expect(toSpeechText("[sigh] Let's try again.")).toBe("<sigh> Let's try again.");
+    expect(toSpeechText("Wait here. [dramatic pause]")).toBe("<pauses> Wait here.");
+  });
+  it("does not turn emotion-like text inside code into audio tags", () => {
+    expect(toSpeechText('`[cheerful]` is an example cue.')).toBe("[cheerful] is an example cue.");
   });
   it("speaks ampersands, division, equality, and currency naturally", () => {
     expect(toSpeechText("A & B, 10/2 = 5, and the total is $50.")).toBe("A and B, 10 divided by 2 equals 5, and the total is 50 dollars.");
